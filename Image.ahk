@@ -32,7 +32,7 @@ class Image {
 
         x := fx
         y := fy
-        CenterImgSearchCoords(image, &x, &y)
+        this.CenterImgSearchCoords(image, &x, &y)
         return true
     }
 
@@ -43,7 +43,7 @@ class Image {
         lastX := "", lastY := "", stableSince := 0
 
         while A_TickCount - start < timeoutMs {
-            if FindImage(&cx, &cy, image, region) {
+            if this.FindImage(&cx, &cy, image, region) {
                 if lastX != "" && Abs(cx - lastX) <= maxDrift && Abs(cy - lastY) <= maxDrift {
                     if A_TickCount - stableSince >= stableMs {
                         x := cx, y := cy
@@ -62,7 +62,7 @@ class Image {
     }
 
     static CenterImgSearchCoords(img, &x, &y) {
-        GetImageSize(img, &w, &h)
+        this.GetImageSize(img, &w, &h)
 
         x += w // 2
         y += h // 2

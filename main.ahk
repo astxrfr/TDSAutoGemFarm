@@ -4,6 +4,7 @@
 #Include state.ahk
 #Include character.ahk
 #Include output.ahk
+#Include ui.ahk
 
 CoordMode "Pixel", "Screen"
 CoordMode "Mouse", "Screen"
@@ -19,7 +20,7 @@ flamethrowerSlot            := 1
 soldierSlot                 := 2
 
 detectionTolerance          := 40       ; 0-255
-skipAreaRegion              := [775, 133, 1147, 245]
+promptRegion                := [775, 133, 1147, 245]
 fullScreenRegion            := [0, 0, A_ScreenWidth, A_ScreenHeight]
 ; ----------------------------
 
@@ -31,7 +32,7 @@ F8::{
     running := !running
 
     if running {
-        SetTimer Tick, 100
+        SetTimer Tick, 10
         ToolTip "Macro ON (F8 to stop)"
     } else {
         SetTimer Tick, 0
@@ -46,36 +47,47 @@ Tick() {
     global currentState 
     currentState := StateExecute(currentState)
 
-    if Image.FindStableImage(&x, &y, Image.Button.SKIP, skipAreaRegion) {
+    if Image.FindStableImage(&x, &y, Image.Button.SKIP, promptRegion) {
         ClickAt(x, y)
         Sleep(10)
         ResetCursorPos()
     }
 }
 
-StateExecute(state) {
-    switch state {
+StateExecute(current) {
+    switch current {
         case State.SETUP: return Setup()
-        case State.RELOCATE: return ReadyUp()
+        case State.READY: return ReadyUp()
+        case State.PLACEMENT: return Placement() 
 
-        default: return state
+        default: return current
     }
 }
 
 Setup() {
-    if !WalkUntilLandmark(Image.Landscape.SPOT_1)
-        Reset()
+    SetUIState("Current state: " StrUpper(State.SETUP))
+
+    if !Walk(2000) {
         return State.SETUP
+    }
 
     return State.READY
 }
 
 ReadyUp() {
-    if Image.FindImage(&x, &y, Image.Button.READY, skipAreaRegion) {
+    SetUIState("Current state: " StrUpper(State.READY))
+
+    if Image.FindImage(&x, &y, Image.Button.READY, promptRegion) {
         ToolTip "READY at [" x "," y "] - starting session"
         ClickAt(x, y)
-        Sleep(100)
+        Sleep(10)
+        ResetCursorPos()
+        Sleep(80)
     }
 
     return State.PLACEMENT
+}
+
+Placement() {
+    SetUIState("Current state: " StrUpper(State.PLACEMENT))
 }

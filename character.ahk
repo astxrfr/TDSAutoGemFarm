@@ -34,3 +34,12 @@ WalkUntilLandmark(landmark, timeoutMs := 4000, tol := 40, area := fullScreenRegi
     }
     return false
 }
+
+Walk(timeMs) {
+    start := A_TickCount
+    Send "{s down}"
+    Sleep timeMs
+    Send "{s up}"
+    
+    return true
+}
