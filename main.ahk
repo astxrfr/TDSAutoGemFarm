@@ -3,8 +3,10 @@
 #Include image.ahk
 #Include state.ahk
 #Include character.ahk
-#Include output.ahk
+#Include input.ahk
 #Include ui.ahk
+#Include cash.ahk
+#Include inputScheduler.ahk
 
 CoordMode "Pixel", "Screen"
 CoordMode "Mouse", "Screen"
@@ -27,31 +29,42 @@ fullScreenRegion            := [0, 0, A_ScreenWidth, A_ScreenHeight]
 running := false
 currentState := State.SETUP
 
+INPUT_SCHEDULER := InputScheduler()
+INSCHE_TICK := ObjBindMethod(INPUT_SCHEDULER, "Tick")
+
 F8::{
     global running
     running := !running
 
     if running {
-        SetTimer Tick, 10
-        ToolTip "Macro ON (F8 to stop)"
+        SetTimer Tick, 50
+        SetTimer TickCash, 50
+        SetTimer INSCHE_TICK, 10
+        UI.UpdateStatus()
     } else {
         SetTimer Tick, 0
-        ToolTip "Macro OFF"
-        SetTimer () => ToolTip(), -1500
+        SetTimer TickCash, 0
+        SetTimer INSCHE_TICK, 0
+        UI.UpdateStatus()
     }
 }
 
 F12::ExitApp
 
-Tick() {
-    global currentState 
+Tick() { 
+    global currentState
     currentState := StateExecute(currentState)
 
-    if Image.FindStableImage(&x, &y, Image.Button.SKIP, promptRegion) {
-        ClickAt(x, y)
+    if Image.Search.FindStableImage(&x, &y, Image.Button.SKIP, promptRegion) {
+        Inputs.ClickAt(x, y)
         Sleep(10)
-        ResetCursorPos()
+        Inputs.ResetCursorPos()
     }
+}
+
+TickCash() {
+    Cash.Read()
+    UI.SetCash(Cash.CURRENT)
 }
 
 StateExecute(current) {
@@ -65,9 +78,9 @@ StateExecute(current) {
 }
 
 Setup() {
-    SetUIState("Current state: " StrUpper(State.SETUP))
+    UI.SetState("Current state: " StrUpper(State.SETUP))
 
-    if !Walk(2000) {
+    if !Character.Walk(2000) {
         return State.SETUP
     }
 
@@ -75,13 +88,13 @@ Setup() {
 }
 
 ReadyUp() {
-    SetUIState("Current state: " StrUpper(State.READY))
+    UI.SetState("Current state: " StrUpper(State.READY))
 
-    if Image.FindImage(&x, &y, Image.Button.READY, promptRegion) {
+    if Image.Search.FindImage(&x, &y, Image.Button.READY, promptRegion) {
         ToolTip "READY at [" x "," y "] - starting session"
-        ClickAt(x, y)
+        Inputs.ClickAt(x, y)
         Sleep(10)
-        ResetCursorPos()
+        Inputs.ResetCursorPos()
         Sleep(80)
     }
 
@@ -89,5 +102,7 @@ ReadyUp() {
 }
 
 Placement() {
-    SetUIState("Current state: " StrUpper(State.PLACEMENT))
+    UI.SetState("Current state: " StrUpper(State.PLACEMENT))
+
+
 }

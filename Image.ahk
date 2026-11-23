@@ -18,60 +18,62 @@ class Image {
         }
     }
 
-    static FindImage(&x, &y, image, region) {
-        global detectionTolerance
+    class Search {
+        static FindImage(&x, &y, image, region) {
+            global detectionTolerance
 
-        try found := ImageSearch(&fx, &fy, region[1], region[2], region[3], region[4], "*" detectionTolerance " " image)
-        catch as e {
-            ToolTip "ImageSearch error: " e.Message
-            return false
-        }
-
-        if !found
-            return false
-
-        x := fx
-        y := fy
-        this.CenterImgSearchCoords(image, &x, &y)
-        return true
-    }
-
-    ; Waits until the image is found AND hasn't moved for stableMs.
-    ; Returns the final (stable) position in x,y.
-    static FindStableImage(&x, &y, image, region, timeoutMs := 5000, stableMs := 300, maxDrift := 2) {
-        start := A_TickCount
-        lastX := "", lastY := "", stableSince := 0
-
-        while A_TickCount - start < timeoutMs {
-            if this.FindImage(&cx, &cy, image, region) {
-                if lastX != "" && Abs(cx - lastX) <= maxDrift && Abs(cy - lastY) <= maxDrift {
-                    if A_TickCount - stableSince >= stableMs {
-                        x := cx, y := cy
-                        return true
-                    }
-                } else {
-                    stableSince := A_TickCount    ; first sighting or it moved: restart the clock
-                }
-                lastX := cx, lastY := cy
-            } else {
-                lastX := ""                       ; lost it, start over
+            try found := ImageSearch(&fx, &fy, region[1], region[2], region[3], region[4], "*" detectionTolerance " " image)
+            catch as e {
+                ToolTip "ImageSearch error: " e.Message
+                return false
             }
-            Sleep 50
+
+            if !found
+                return false
+
+            x := fx
+            y := fy
+            this.CenterImgSearchCoords(image, &x, &y)
+            return true
         }
-        return false
-    }
 
-    static CenterImgSearchCoords(img, &x, &y) {
-        this.GetImageSize(img, &w, &h)
+        ; Waits until the image is found AND hasn't moved for stableMs.
+        ; Returns the final (stable) position in x,y.
+        static FindStableImage(&x, &y, image, region, timeoutMs := 5000, stableMs := 300, maxDrift := 2) {
+            start := A_TickCount
+            lastX := "", lastY := "", stableSince := 0
 
-        x += w // 2
-        y += h // 2
-    }
+            while A_TickCount - start < timeoutMs {
+                if this.FindImage(&cx, &cy, image, region) {
+                    if lastX != "" && Abs(cx - lastX) <= maxDrift && Abs(cy - lastY) <= maxDrift {
+                        if A_TickCount - stableSince >= stableMs {
+                            x := cx, y := cy
+                            return true
+                        }
+                    } else {
+                        stableSince := A_TickCount    ; first sighting or it moved: restart the clock
+                    }
+                    lastX := cx, lastY := cy
+                } else {
+                    lastX := ""                       ; lost it, start over
+                }
+                Sleep 50
+            }
+            return false
+        }
 
-    static GetImageSize(img, &w, &h) {
-        g := Gui("-DPIScale")
-        pic := g.Add("Picture", , img)
-        pic.GetPos(, , &w, &h)
-        g.Destroy()
+        static CenterImgSearchCoords(img, &x, &y) {
+            this.GetImageSize(img, &w, &h)
+
+            x += w // 2
+            y += h // 2
+        }
+
+        static GetImageSize(img, &w, &h) {
+            g := Gui("-DPIScale")
+            pic := g.Add("Picture", , img)
+            pic.GetPos(, , &w, &h)
+            g.Destroy()
+        }
     }
 }
