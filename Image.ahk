@@ -16,9 +16,15 @@ class Image {
         static SKIP {
             get => Image.dir "waveSkipButton.png"
         }
+        static RESTART {
+            get => Image.dir "RestartButton.png"
+        }
     }
 
     class Search {
+        static upgradeSignPos := [1021, 790]
+        static upgradeSignColor := 0x47FF0F
+
         static FindImage(&x, &y, image, region) {
             global detectionTolerance
 
@@ -74,6 +80,19 @@ class Image {
             pic := g.Add("Picture", , img)
             pic.GetPos(, , &w, &h)
             g.Destroy()
+        }
+
+        static isUpgradeAffordable() {
+            color := PixelGetColor(this.upgradeSignPos[1], this.upgradeSignPos[2])
+            return ColorNear(color, this.upgradeSignColor)
+
+            ColorNear(actual, expected, tolerance := 5) {
+                return (
+                    Abs(((actual >> 16) & 255) - ((expected >> 16) & 255)) <= tolerance
+                    && Abs(((actual >> 8) & 255) - ((expected >> 8) & 255)) <= tolerance
+                    && Abs((actual & 255) - (expected & 255)) <= tolerance
+                )
+            }
         }
     }
 }

@@ -24,6 +24,7 @@ soldierSlot                 := 2
 
 detectionTolerance          := 40       ; 0-255
 promptRegion                := [775, 133, 1147, 245]
+restartRegion               := [973, 857, 1240, 916]
 fullScreenRegion            := [0, 0, A_ScreenWidth, A_ScreenHeight]
 ; ----------------------------
 
@@ -41,12 +42,14 @@ F8::{
         SetTimer Tick, 50
         SetTimer TickCash, 50
         SetTimer TickSkipper, 50
+        SetTimer TickWatchdog, 50
         SetTimer INSCHE_TICK, 10
         UI.UpdateStatus()
     } else {
         SetTimer Tick, 0
         SetTimer TickCash, 0
         SetTimer TickSkipper, 0
+        SetTimer TickWatchdog, 0
         SetTimer INSCHE_TICK, 0
         UI.UpdateStatus()
     }
@@ -60,11 +63,29 @@ Tick() {
 }
 
 TickSkipper() {
-    if Image.Search.FindStableImage(&x, &y, Image.Button.SKIP, promptRegion) {
-        clickAt := Inputs.ClickAt(x, y).AndReset()
-        
-        INPUT_SCHEDULER.Queue(clickAt)
+    static pending := 0
+    static armed := true
+
+    if pending is Sequence {
+        if !pending.done
+            return
+
+        pending := 0
     }
+
+    found := Image.Search.FindStableImage(&x, &y, Image.Button.SKIP, promptRegion)
+
+    if !found {
+        armed := true
+        return
+    }
+
+    if !armed
+        return
+
+    pending := Inputs.ClickAt(x, y).AndReset()
+    armed := false
+    INPUT_SCHEDULER.Queue(pending)
 }
 
 TickCash() {
@@ -72,44 +93,55 @@ TickCash() {
     UI.SetCash(Cash.CURRENT)
 }
 
+TickWatchdog() {
+    global currentState
+
+    if currentState = State.RESTART
+        return
+
+    if MatchEnded(&x, &y)
+        Restart(x, y)
+}
+
 StateExecute(current) {
     switch current {
         case State.SETUP: return Setup()
         case State.READY: return ReadyUp()
         case State.PLACING: return Placing()
-        case State.RESTART: return Restart() 
+        case State.END: return End() 
+        case State.RESTART: return State.RESTART
 
         default: return current
     }
 }
 
 Setup() {
-    static pending := 0
+    static setupPending := 0
     UI.SetState("Current state: " StrUpper(State.SETUP))
 
-    if !(pending is Sequence) {
-        pending := Character.Walk(2000)
-        INPUT_SCHEDULER.Queue(pending)
+    if !(setupPending is Sequence) {
+        setupPending := Character.Walk(2000)
+        INPUT_SCHEDULER.Queue(setupPending)
     }
     
-    if !pending.done {
+    if !setupPending.done {
         return State.SETUP
     }
 
-    pending := 0
+    setupPending := 0
     return State.READY
 }
 
 ReadyUp() {
-    static pending := 0
+    static readyPending := 0
 
     UI.SetState("Current state: " StrUpper(State.READY))
 
-    if pending is Sequence {
-        if !pending.done
+    if readyPending is Sequence {
+        if !readyPending.done
             return State.READY
 
-        pending := 0
+        readyPending := 0
         return State.PLACING
     }
 
@@ -117,12 +149,12 @@ ReadyUp() {
         return State.READY
     }
 
-    pending := Inputs.ClickAt(x, y).AndReset()
-    pending.Add(Sequence.Builder()
+    readyPending := Inputs.ClickAt(x, y).AndReset()
+    readyPending.Add(Sequence.Builder()
             .AddWait(80)
             .Build()
     )
-    INPUT_SCHEDULER.Queue(pending)
+    INPUT_SCHEDULER.Queue(readyPending)
     return State.READY
 }
 
@@ -130,11 +162,39 @@ Placing() {
     UI.SetState("Current state: " StrUpper(State.PLACING))
 
     if Placement.Manager.AttemptNext() = -1
-        return State.RESTART
+        return State.END
 
     return State.PLACING
 }
 
-Restart() {
+End() {
+    UI.SetState("Current state: " StrUpper(State.END))
+    return State.END
+}
+
+Restart(x, y) {
+    global currentState
+    static restartPending := 0
+    currentState := State.RESTART
     UI.SetState("Current state: " StrUpper(State.RESTART))
+
+    if restartPending is Sequence {
+        if !restartPending.done
+            return
+
+        restartPending := 0
+        currentState := State.SETUP
+    }
+
+    if !ran {
+        Placement.Manager.Reset()
+        INPUT_SCHEDULER.Reset()
+        INPUT_SCHEDULER.Queue()
+        INPUT_SCHEDULER.Queue(Character.Reset())
+        ran := true
+    }
+}
+
+MatchEnded(&x, &y) {
+    return Image.Search.FindImage(&x, &y, Image.Button.RESTART, restartRegion)
 }

@@ -39,7 +39,7 @@ class Tower {
 
     UpgradeImmediately(level) {
         return Condition(
-            () => Cash.CURRENT >= this.upgradeCosts[level],
+            () => Image.Search.isUpgradeAffordable(),
             Inputs.UpgradeImmediately(),
             this.upgradeCosts[level]
         )

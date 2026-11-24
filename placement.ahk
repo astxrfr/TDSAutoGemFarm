@@ -57,5 +57,10 @@ class Placement {
             if this.activeProcedure is Procedure
                 UI.SetNextCost(this.activeProcedure.NextCost)
         }
+
+        static Reset() {
+            Placement.CURRENT := 1
+            this.activeProcedure := 0
+        }
     }
 }

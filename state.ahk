@@ -13,6 +13,10 @@ class State {
         get => "placement"
     }
 
+    static END {
+        get => "end"
+    }
+
     static RESTART {
         get => "restart"
     }

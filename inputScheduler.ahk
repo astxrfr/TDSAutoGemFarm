@@ -4,12 +4,16 @@
 class InputScheduler {
     taskqueue := []
     active := 0
+    locked := false
 
     Queue(sequence) {
         this.taskqueue.Push(sequence)
     }
 
     Tick() {
+        if this.locked
+            return
+
         if !(this.active is Sequence) {
             if this.taskqueue.Length = 0
                 return
@@ -19,6 +23,13 @@ class InputScheduler {
 
         if !this.active.Next()
             this.active := 0
+    }
+
+    Reset() {
+        this.locked := true
+        this.taskqueue := []
+        this.active := 0
+        this.locked := false
     }
 
     Idle {

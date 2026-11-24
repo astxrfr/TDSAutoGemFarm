@@ -3,7 +3,7 @@
 
 class Character {
     static Reset() {
-        seq := Sequence.Builder()
+        return Sequence.Builder()
             .AddNext(() => Send("{Escape down}"))
             .AddWait(10)
             .AddNext(() => Send("{Escape up}"))
@@ -15,9 +15,8 @@ class Character {
             .AddNext(() => Send("{Enter down}"))
             .AddWait(10)
             .AddNext(() => Send("{Enter up}"))
+            .AddWait(8000)
             .Build()
-
-        INPUT_SCHEDULER.Queue(seq)
     }
 
     /**
