@@ -9,7 +9,11 @@ class State {
         get => "ready"
     }
 
-    static PLACEMENT {
+    static PLACING {
         get => "placement"
+    }
+
+    static RESTART {
+        get => "restart"
     }
 }

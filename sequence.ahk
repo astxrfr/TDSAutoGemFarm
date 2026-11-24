@@ -3,6 +3,7 @@
 class Sequence {
     currentStep := 0
     readyAt := 0
+    done := false
 
     __New(steps) {
         this.steps := steps
@@ -12,8 +13,10 @@ class Sequence {
         if A_TickCount < this.readyAt
             return true
 
-        if this.currentStep >= this.steps.Length
+        if this.currentStep >= this.steps.Length {
+            this.done := true
             return false
+        }
 
         this.currentStep++
         step := this.steps[this.currentStep]
@@ -38,6 +41,11 @@ class Sequence {
         return this
     }
 
+    AndReset() {
+        this.Add(Inputs.ResetCursorPos())
+        return this
+    }
+
     class Builder {
         builder_steps := []
 
@@ -54,5 +62,35 @@ class Sequence {
         Build() {
             return Sequence(this.builder_steps.Clone())
         }
+    }
+}
+
+class Condition {
+    cond := 0
+
+    __New(cond, seq, cost := 0) {
+        this.cond := cond
+        this.seq := seq
+        this.cost := cost
+    }
+
+    /**
+     * Builds an unconditioned Condition object from the supplied sequence
+     * @param seq sequence to build condition of
+     */
+    static of(seq) {
+        return Condition(0, seq)
+    }
+
+    isPosible() {
+        if this.cond = 0
+            return true
+
+        predicate := this.cond
+        return predicate.Call()
+    }
+
+    SEQUENCE {
+        get => this.seq
     }
 }

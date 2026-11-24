@@ -1,5 +1,4 @@
 #Requires AutoHotkey v2.0
-#Include scheduler.ahk
 #Include sequence.ahk
 
 class InputScheduler {
@@ -20,5 +19,10 @@ class InputScheduler {
 
         if !this.active.Next()
             this.active := 0
+    }
+
+    Idle {
+        get => !(this.active is Sequence)
+            && this.taskqueue.Length = 0
     }
 }

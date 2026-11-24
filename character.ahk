@@ -3,19 +3,26 @@
 
 class Character {
     static Reset() {
-        Send "{Escape down}"
-        Sleep 10
-        Send "{Escape up}"
-        Sleep 20
-        Send "{r down}"
-        Sleep 10
-        Send "{r up}"
-        Sleep 20
-        Send "{Enter down}"
-        Sleep 10
-        Send "{Enter up}"
+        seq := Sequence.Builder()
+            .AddNext(() => Send("{Escape down}"))
+            .AddWait(10)
+            .AddNext(() => Send("{Escape up}"))
+            .AddWait(20)
+            .AddNext(() => Send("{r down}"))
+            .AddWait(10)
+            .AddNext(() => Send("{r up}"))
+            .AddWait(20)
+            .AddNext(() => Send("{Enter down}"))
+            .AddWait(10)
+            .AddNext(() => Send("{Enter up}"))
+            .Build()
+
+        INPUT_SCHEDULER.Queue(seq)
     }
 
+    /**
+     * @deprecated
+     */
     static WalkUntilLandmark(landmark, timeoutMs := 4000, tol := 40, area := fullScreenRegion) {
         start := A_TickCount
         Send "{s down}"
@@ -37,11 +44,10 @@ class Character {
     }
 
     static Walk(timeMs) {
-        start := A_TickCount
-        Send "{s down}"
-        Sleep timeMs
-        Send "{s up}"
-        
-        return true
+        return Sequence.Builder()
+            .AddNext(() => Send("{s down}"))
+            .AddWait(timeMs)
+            .AddNext(() => Send("{s up}"))
+            .Build()
     }
 }

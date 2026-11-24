@@ -3,10 +3,11 @@
 #Include image.ahk
 #Include state.ahk
 #Include character.ahk
-#Include input.ahk
+#Include inputs.ahk
 #Include ui.ahk
 #Include cash.ahk
 #Include inputScheduler.ahk
+#Include placement.ahk
 
 CoordMode "Pixel", "Screen"
 CoordMode "Mouse", "Screen"
@@ -18,7 +19,7 @@ if !A_IsAdmin {
 }
 
 ; ---------- CONFIG ----------
-flamethrowerSlot            := 1
+pyroSlot                    := 1
 soldierSlot                 := 2
 
 detectionTolerance          := 40       ; 0-255
@@ -39,11 +40,13 @@ F8::{
     if running {
         SetTimer Tick, 50
         SetTimer TickCash, 50
+        SetTimer TickSkipper, 50
         SetTimer INSCHE_TICK, 10
         UI.UpdateStatus()
     } else {
         SetTimer Tick, 0
         SetTimer TickCash, 0
+        SetTimer TickSkipper, 0
         SetTimer INSCHE_TICK, 0
         UI.UpdateStatus()
     }
@@ -54,11 +57,13 @@ F12::ExitApp
 Tick() { 
     global currentState
     currentState := StateExecute(currentState)
+}
 
+TickSkipper() {
     if Image.Search.FindStableImage(&x, &y, Image.Button.SKIP, promptRegion) {
-        Inputs.ClickAt(x, y)
-        Sleep(10)
-        Inputs.ResetCursorPos()
+        clickAt := Inputs.ClickAt(x, y).AndReset()
+        
+        INPUT_SCHEDULER.Queue(clickAt)
     }
 }
 
@@ -71,38 +76,65 @@ StateExecute(current) {
     switch current {
         case State.SETUP: return Setup()
         case State.READY: return ReadyUp()
-        case State.PLACEMENT: return Placement() 
+        case State.PLACING: return Placing()
+        case State.RESTART: return Restart() 
 
         default: return current
     }
 }
 
 Setup() {
+    static pending := 0
     UI.SetState("Current state: " StrUpper(State.SETUP))
 
-    if !Character.Walk(2000) {
+    if !(pending is Sequence) {
+        pending := Character.Walk(2000)
+        INPUT_SCHEDULER.Queue(pending)
+    }
+    
+    if !pending.done {
         return State.SETUP
     }
 
+    pending := 0
     return State.READY
 }
 
 ReadyUp() {
+    static pending := 0
+
     UI.SetState("Current state: " StrUpper(State.READY))
 
-    if Image.Search.FindImage(&x, &y, Image.Button.READY, promptRegion) {
-        ToolTip "READY at [" x "," y "] - starting session"
-        Inputs.ClickAt(x, y)
-        Sleep(10)
-        Inputs.ResetCursorPos()
-        Sleep(80)
+    if pending is Sequence {
+        if !pending.done
+            return State.READY
+
+        pending := 0
+        return State.PLACING
     }
 
-    return State.PLACEMENT
+    if !Image.Search.FindImage(&x, &y, Image.Button.READY, promptRegion) {
+        return State.READY
+    }
+
+    pending := Inputs.ClickAt(x, y).AndReset()
+    pending.Add(Sequence.Builder()
+            .AddWait(80)
+            .Build()
+    )
+    INPUT_SCHEDULER.Queue(pending)
+    return State.READY
 }
 
-Placement() {
-    UI.SetState("Current state: " StrUpper(State.PLACEMENT))
+Placing() {
+    UI.SetState("Current state: " StrUpper(State.PLACING))
 
+    if Placement.Manager.AttemptNext() = -1
+        return State.RESTART
 
+    return State.PLACING
+}
+
+Restart() {
+    UI.SetState("Current state: " StrUpper(State.RESTART))
 }

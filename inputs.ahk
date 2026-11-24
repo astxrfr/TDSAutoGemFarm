@@ -4,7 +4,9 @@
 class Inputs {    
     static ResetCursorPos() {
         return Sequence.Builder()
+            .AddWait(10)
             .AddNext(() => MouseMove(A_ScreenWidth//4*3, A_ScreenHeight//2, 10))
+            .Build()
     }
 
     static ClickAt(x, y) {
@@ -25,7 +27,18 @@ class Inputs {
             .AddWait(10)
             .Build()
 
-        click := Inputs.ClickAt(x, y)
-        return slotSelect.Add(click)
+        clickAt := Inputs.ClickAt(x, y)
+        delay := Sequence.Builder().AddWait(1000).Build()
+        return slotSelect.Add(clickAt).Add(delay)
+    }
+
+    static UpgradeImmediately() {
+        return Sequence.Builder()
+            .AddNext(() => Send("{e down}"))
+            .AddWait(10)
+            .AddNext(() => Send("{e up}"))
+            .AddWait(20)
+            .AddWait(1000)
+            .Build()
     }
 }

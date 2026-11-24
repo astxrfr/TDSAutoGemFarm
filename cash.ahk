@@ -2,7 +2,9 @@
 #Include <OCR>
 
 class Cash {
-    static cashRegion := [1215, 1003, 1312, 1022]
+    static cashPos := [1225, 1008]
+    static cashH := 14
+    static cashW := 50
     static currentCash := 0
 
     static CURRENT {
@@ -10,10 +12,11 @@ class Cash {
     }
 
     static Read() {
-        try txt := OCR.FromRect(this.cashRegion[1], this.cashRegion[2], this.cashRegion[3], this.cashRegion[4], {scale: 2}).Text
+        try txt := OCR.FromRect(this.cashPos[1], this.cashPos[2], this.cashW, this.cashH, {scale: 2}).Text
         catch 
             return
 
+        UI.SetReadCash(txt)
         txt := RegExReplace(txt, "[Oo]", "0")          ; lookalikes, safe in a digits-only crop
         txt := RegExReplace(txt, "[lI|]", "1")
         if !RegExMatch(txt, "(\d[\d,.]*)\s*([KkMm])?", &m)
