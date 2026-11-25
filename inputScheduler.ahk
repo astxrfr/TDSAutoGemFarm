@@ -26,10 +26,14 @@ class InputScheduler {
     }
 
     Reset() {
-        this.locked := true
         this.taskqueue := []
         this.active := 0
-        this.locked := false
+
+        Send(
+            "{LButton up}{RButton up}"
+            "{s up}{e up}{Escape up}{r up}{Enter up}"
+            "{1 up}{2 up}"
+        )
     }
 
     Idle {

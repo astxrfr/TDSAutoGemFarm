@@ -6,22 +6,22 @@ class Placement {
     static CURRENT := 1
     static ORDER := [
             GoldenPyromancer(847, 475, 2),
-            GoldenSoldier(748, 648, 2),
-            GoldenSoldier(848, 666, 2),
-            GoldenSoldier(771, 568, 2),
-            GoldenSoldier(867, 573, 2),
-            GoldenSoldier(951, 679, 2),
+            GoldenSoldier(738, 669, 2),
+            GoldenSoldier(851, 693, 2),
+            GoldenSoldier(993, 721, 2),
+            GoldenSoldier(1162, 746, 2),
+            GoldenSoldier(778, 566, 2),
             GoldenPyromancer(1165, 576, 2),
-            GoldenSoldier(944, 593, 2),
-            GoldenSoldier(1085, 698, 2),
-            GoldenSoldier(745, 716, 2),
-            GoldenSoldier(854, 747, 2),
-            GoldenSoldier(1040, 603, 2),
-            GoldenSoldier(987, 807, 2),
-            GoldenSoldier(1177, 836, 2),
-            GoldenSoldier(1240, 728, 2),
-            GoldenSoldier(760, 971, 2),
-            GoldenSoldier(1330, 1041, 2)
+            GoldenSoldier(866, 572, 2),
+            GoldenSoldier(961, 577, 2),
+            GoldenSoldier(918, 542, 2),
+            GoldenSoldier(1345, 783, 2),
+            GoldenSoldier(790, 793, 2),
+            GoldenSoldier(618, 1013, 2),
+            GoldenSoldier(677, 581, 2),
+            GoldenSoldier(1405, 1051, 2),
+            GoldenSoldier(1268, 602, 2),
+            GoldenSoldier(586, 709, 2)
         ]
 
     class Manager {

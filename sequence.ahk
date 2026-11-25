@@ -46,6 +46,10 @@ class Sequence {
         return this
     }
 
+    static asDelay(timeMs) {
+        return Sequence.Builder().AddWait(timeMs).Build()
+    }
+
     class Builder {
         builder_steps := []
 

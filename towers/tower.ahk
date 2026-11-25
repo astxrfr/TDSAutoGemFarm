@@ -26,12 +26,13 @@ class Tower {
         loop this.level 
             proc.AddCondition(this.UpgradeImmediately(A_Index))
 
+        proc.AddCondition(Condition.of(Sequence.asDelay(1500)))
         return proc.Build()
     }
 
     Place() {
         return Condition(
-            () => Cash.CURRENT >= this.baseCost,
+            () => Cash.CanAfford(this.baseCost),
             Inputs.PlaceTower(this.x, this.y, this.slot),
             this.baseCost
         )

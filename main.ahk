@@ -22,17 +22,30 @@ if !A_IsAdmin {
 pyroSlot                    := 1
 soldierSlot                 := 2
 
-detectionTolerance          := 40       ; 0-255
+detectionTolerance          := 60       ; 0-255
+restartPos                  := [1107, 891]
 promptRegion                := [775, 133, 1147, 245]
-restartRegion               := [973, 857, 1240, 916]
+restartRegion               := [963, 853, 1259, 928]
 fullScreenRegion            := [0, 0, A_ScreenWidth, A_ScreenHeight]
 ; ----------------------------
 
 running := false
 currentState := State.SETUP
 
+SESSION := {
+    generation: 0,
+    setupPending: 0,
+    readyPending: 0,
+    skipPending: 0,
+    skipArmed: true,
+    restartPending: 0,
+    restartPhase: 0,
+    restartRetryAt: 0
+}
+
 INPUT_SCHEDULER := InputScheduler()
-INSCHE_TICK := ObjBindMethod(INPUT_SCHEDULER, "Tick")
+MACRO_TIMEOUT_MS := 8 * 60 * 1000  ; 8 minutes
+startedAt := A_TickCount
 
 F8::{
     global running
@@ -40,52 +53,83 @@ F8::{
 
     if running {
         SetTimer Tick, 50
-        SetTimer TickCash, 50
+        SetTimer TickCash, 25
         SetTimer TickSkipper, 50
         SetTimer TickWatchdog, 50
-        SetTimer INSCHE_TICK, 10
+        SetTimer InputTick, 10
         UI.UpdateStatus()
     } else {
         SetTimer Tick, 0
         SetTimer TickCash, 0
         SetTimer TickSkipper, 0
         SetTimer TickWatchdog, 0
-        SetTimer INSCHE_TICK, 0
+        SetTimer InputTick, 0
         UI.UpdateStatus()
     }
 }
 
 F12::ExitApp
 
-Tick() { 
+Tick() {
     global currentState
-    currentState := StateExecute(currentState)
+
+    Critical "On"
+    try {
+        if !running
+            return
+
+        currentState := StateExecute(currentState)
+    } finally {
+        Critical "Off"
+    }
+}
+
+InputTick() {
+    Critical "On"
+    try {
+        if running
+            INPUT_SCHEDULER.Tick()
+    } finally {
+        Critical "Off"
+    }
 }
 
 TickSkipper() {
-    static pending := 0
-    static armed := true
+    if !running || currentState = State.RESTART
+        return
 
-    if pending is Sequence {
-        if !pending.done
+    generation := SESSION.generation
+
+    if SESSION.skipPending is Sequence {
+        if !SESSION.skipPending.done
             return
 
-        pending := 0
+        SESSION.skipPending := 0
     }
 
-    found := Image.Search.FindStableImage(&x, &y, Image.Button.SKIP, promptRegion)
+    found := FindSkip(&x, &y)
 
-    if !found {
-        armed := true
-        return
+    Critical "On"
+    try {
+        if !running || currentState = State.RESTART
+            return
+        if generation != SESSION.generation
+            return
+
+        if !found {
+            SESSION.skipArmed := true
+            return
+        }
+
+        if !SESSION.skipArmed
+            return
+
+        SESSION.skipPending := Inputs.ClickAt(x, y).AndReset()
+        SESSION.skipArmed := false
+        INPUT_SCHEDULER.Queue(SESSION.skipPending)
+    } finally {
+        Critical "Off"
     }
-
-    if !armed
-        return
-
-    pending := Inputs.ClickAt(x, y).AndReset()
-    armed := false
-    INPUT_SCHEDULER.Queue(pending)
 }
 
 TickCash() {
@@ -94,13 +138,27 @@ TickCash() {
 }
 
 TickWatchdog() {
-    global currentState
-
-    if currentState = State.RESTART
+    if !running || currentState = State.RESTART
         return
 
-    if MatchEnded(&x, &y)
-        Restart(x, y)
+    generation := SESSION.generation
+
+    if !MatchEnded()
+        return
+
+    Critical "On"
+    try {
+        if !running
+            return
+        if generation != SESSION.generation
+            return
+        if currentState = State.RESTART
+            return
+
+        BeginRestart(restartPos[1], restartPos[2])
+    } finally {
+        Critical "Off"
+    }
 }
 
 StateExecute(current) {
@@ -109,52 +167,51 @@ StateExecute(current) {
         case State.READY: return ReadyUp()
         case State.PLACING: return Placing()
         case State.END: return End() 
-        case State.RESTART: return State.RESTART
+        case State.RESTART: return RestartTick()
 
         default: return current
     }
 }
 
 Setup() {
-    static setupPending := 0
     UI.SetState("Current state: " StrUpper(State.SETUP))
 
-    if !(setupPending is Sequence) {
-        setupPending := Character.Walk(2000)
-        INPUT_SCHEDULER.Queue(setupPending)
-    }
-    
-    if !setupPending.done {
-        return State.SETUP
+    if !(SESSION.setupPending is Sequence) {
+        SESSION.setupPending := Character.Walk(2000)
+        INPUT_SCHEDULER.Queue(SESSION.setupPending)
     }
 
-    setupPending := 0
+    if !SESSION.setupPending.done
+        return State.SETUP
+
+    SESSION.setupPending := 0
     return State.READY
 }
 
 ReadyUp() {
-    static readyPending := 0
-
     UI.SetState("Current state: " StrUpper(State.READY))
 
-    if readyPending is Sequence {
-        if !readyPending.done
+    if SESSION.readyPending is Sequence {
+        if !SESSION.readyPending.done
             return State.READY
 
-        readyPending := 0
+        SESSION.readyPending := 0
         return State.PLACING
     }
 
-    if !Image.Search.FindImage(&x, &y, Image.Button.READY, promptRegion) {
+    if !Image.Search.FindImage(
+        &x, &y, Image.Button.READY, promptRegion
+    )
         return State.READY
-    }
 
-    readyPending := Inputs.ClickAt(x, y).AndReset()
-    readyPending.Add(Sequence.Builder()
+    SESSION.readyPending := Inputs.ClickAt(x, y).AndReset()
+    SESSION.readyPending.Add(
+        Sequence.Builder()
             .AddWait(80)
             .Build()
     )
-    INPUT_SCHEDULER.Queue(readyPending)
+
+    INPUT_SCHEDULER.Queue(SESSION.readyPending)
     return State.READY
 }
 
@@ -172,29 +229,79 @@ End() {
     return State.END
 }
 
-Restart(x, y) {
+BeginRestart(x, y) {
     global currentState
-    static restartPending := 0
+    SESSION.restartRetryAt := A_TickCount + 2000
+
     currentState := State.RESTART
-    UI.SetState("Current state: " StrUpper(State.RESTART))
+    SESSION.generation++
 
-    if restartPending is Sequence {
-        if !restartPending.done
-            return
+    INPUT_SCHEDULER.Reset()
 
-        restartPending := 0
-        currentState := State.SETUP
-    }
+    SESSION.setupPending := 0
+    SESSION.readyPending := 0
+    SESSION.skipPending := 0
+    SESSION.skipArmed := true
+    SESSION.restartPending := 0
+    SESSION.restartPhase := 0
 
-    if !ran {
-        Placement.Manager.Reset()
-        INPUT_SCHEDULER.Reset()
-        INPUT_SCHEDULER.Queue()
-        INPUT_SCHEDULER.Queue(Character.Reset())
-        ran := true
-    }
+    Placement.Manager.Reset()
+
+    SESSION.restartPending := Inputs.ClickAt(x, y).AndReset()
+    INPUT_SCHEDULER.Queue(SESSION.restartPending)
 }
 
-MatchEnded(&x, &y) {
+RestartTick() {
+    global startedAt
+
+    UI.SetState("Current state: " StrUpper(State.RESTART))
+
+    if !SESSION.restartPending.done
+        return State.RESTART
+
+    if SESSION.restartPhase = 0 {
+        if !NewMatchReady() {
+            if A_TickCount >= SESSION.restartRetryAt {
+                SESSION.restartPending :=
+                    Inputs.ClickAt(restartPos[1], restartPos[2]).AndReset()
+
+                INPUT_SCHEDULER.Queue(SESSION.restartPending)
+                SESSION.restartRetryAt := A_TickCount + 2000
+            }
+
+            return State.RESTART
+        }
+
+        SESSION.restartPending := Character.Reset()
+
+        SESSION.restartPhase := 1
+        INPUT_SCHEDULER.Queue(SESSION.restartPending)
+        return State.RESTART
+    }
+
+    SESSION.restartPending := 0
+    SESSION.restartPhase := 0
+    startedAt := A_TickCount
+    return State.SETUP
+}
+
+NewMatchReady() {
+    return Image.Search.FindImage(&x, &y, Image.Button.READY, promptRegion)
+}
+
+MatchEnded() {
     return Image.Search.FindImage(&x, &y, Image.Button.RESTART, restartRegion)
+        OR Image.Search.FindImage(&x, &y, Image.Button.RESTART_2, restartRegion)
+        OR Image.Search.FindImage(&x, &y, Image.Landscape.YOU_LOST, fullScreenRegion)
+        OR Timeout()
+}
+
+Timeout() {
+    global startedAt, MACRO_TIMEOUT_MS
+
+    return A_TickCount - startedAt >= MACRO_TIMEOUT_MS
+}
+
+FindSkip(&x, &y) {
+    return Image.Search.FindStableImage(&x, &y, Image.Button.SKIP, promptRegion) OR Image.Search.FindStableImage(&x, &y, Image.Button.SKIP_2, promptRegion)
 }

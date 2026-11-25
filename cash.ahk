@@ -2,16 +2,22 @@
 #Include <OCR>
 
 class Cash {
-    static cashPos := [1225, 1008]
-    static cashH := 14
+    static cashPos := [1224, 1008]
+    static cashH := 16
     static cashW := 50
     static currentCash := 0
+    static valid := false
 
     static CURRENT {
         get => Cash.currentCash
     }
 
+    static CanAfford(cost) {
+        return this.valid && this.currentCash >= cost
+    }
+
     static Read() {
+        this.valid := false
         try txt := OCR.FromRect(this.cashPos[1], this.cashPos[2], this.cashW, this.cashH, {scale: 2}).Text
         catch 
             return
@@ -30,5 +36,6 @@ class Cash {
             n *= (StrUpper(m[2]) = "K") ? 1000 : 1000000
         
         Cash.currentCash := Round(n)
+        this.valid := true
     }
 }

@@ -7,6 +7,9 @@ class Image {
         static SPOT_1 {
             get => Image.dir "GateSpot1.png"
         } 
+        static YOU_LOST {
+            get => Image.dir "YouLost.png"
+        }
     }
 
     class Button {
@@ -16,14 +19,23 @@ class Image {
         static SKIP {
             get => Image.dir "waveSkipButton.png"
         }
+        static SKIP_2 {
+            get => Image.dir "waveSkipButton2.png"
+        }
         static RESTART {
             get => Image.dir "RestartButton.png"
+        }
+        static RESTART_2 {
+            get => Image.dir "RestartButton2.png"
         }
     }
 
     class Search {
         static upgradeSignPos := [1021, 790]
         static upgradeSignColor := 0x47FF0F
+
+        static youLostPos := [961, 390]
+        static youLostColor := 0xFF3137
 
         static FindImage(&x, &y, image, region) {
             global detectionTolerance
@@ -84,15 +96,20 @@ class Image {
 
         static isUpgradeAffordable() {
             color := PixelGetColor(this.upgradeSignPos[1], this.upgradeSignPos[2])
-            return ColorNear(color, this.upgradeSignColor)
+            return this.ColorNear(color, this.upgradeSignColor)
+        }
 
-            ColorNear(actual, expected, tolerance := 5) {
-                return (
-                    Abs(((actual >> 16) & 255) - ((expected >> 16) & 255)) <= tolerance
-                    && Abs(((actual >> 8) & 255) - ((expected >> 8) & 255)) <= tolerance
-                    && Abs((actual & 255) - (expected & 255)) <= tolerance
-                )
-            }
+        static isLost() {
+            color := PixelGetColor(this.youLostPos[1], this.youLostPos[2])
+            return this.ColorNear(color, this.youLostColor)
+        }
+        
+        static ColorNear(actual, expected, tolerance := 5) {
+            return (
+                Abs(((actual >> 16) & 255) - ((expected >> 16) & 255)) <= tolerance
+                && Abs(((actual >> 8) & 255) - ((expected >> 8) & 255)) <= tolerance
+                && Abs((actual & 255) - (expected & 255)) <= tolerance
+            )
         }
     }
 }
