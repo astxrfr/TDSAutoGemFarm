@@ -8,7 +8,7 @@ class Tower {
     upgradeCosts := []
     slot := 0
 
-    __New(x, y, level) {
+    __New(x, y, level, slot) {
         if level < 0
             level := 0
         if level > this.upgradeCosts.Length
@@ -17,6 +17,7 @@ class Tower {
         this.x := x
         this.y := y
         this.level := level
+        this.slot := slot
     }
 
     GetProcedure() {

@@ -10,5 +10,4 @@ class GoldenPyromancer extends Tower {
         7500,
         16000
     ]
-    slot := 1
 }

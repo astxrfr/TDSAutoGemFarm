@@ -9,5 +9,4 @@ class GoldenSoldier extends Tower {
         3400,
         11350
     ]
-    slot := 2
 }
