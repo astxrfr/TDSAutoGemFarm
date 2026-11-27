@@ -23,7 +23,7 @@ pyroSlot                    := 1
 soldierSlot                 := 2
 
 detectionTolerance          := 60       ; 0-255
-restartPos                  := [1107, 891]
+restartPos                  := [1108, 854]
 promptRegion                := [775, 133, 1147, 245]
 restartRegion               := [963, 853, 1259, 928]
 fullScreenRegion            := [0, 0, A_ScreenWidth, A_ScreenHeight]
@@ -96,6 +96,9 @@ InputTick() {
 
 TickSkipper() {
     if !running || currentState = State.RESTART
+        return
+
+    if Config.AUTO_SKIP 
         return
 
     generation := SESSION.generation

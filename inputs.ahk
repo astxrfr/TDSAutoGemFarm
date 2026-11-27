@@ -41,4 +41,13 @@ class Inputs {
             .AddWait(1000)
             .Build()
     }
+
+    static SellImmediately() {
+        return Sequence.Builder()
+            .AddNext(() => Send("{x down}"))
+            .AddWait(10)
+            .AddNext(() => Send("{x up}"))
+            .AddWait(20)
+            .Build()
+    }
 }

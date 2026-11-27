@@ -1,9 +1,11 @@
 #Requires AutoHotkey v2.0
-#Include towers\GPyromancer.ahk
-#Include towers\GSoldier.ahk
-#Include towers\Operator.ahk
+#Include towers\towers.ahk
+#Include strats\strats.ahk
 
 class Config {
+    ; Set to true if you have VIP and autoskip is enabled
+    static AUTO_SKIP := true
+    
     /**
      * Contains the configuration for the slots used by the macro.
      */
@@ -13,7 +15,14 @@ class Config {
             return GoldenPyromancer(x, y, lvl, 1)
         }
         static TWO(x, y, lvl) {
-            return Operator(x, y, lvl, 2)
+            return Kingpin(x, y, lvl, 2)
         }
+    }
+
+    /**
+     * Contains the strat used by the macro.
+     */
+    static STRAT {
+        get => TowerEXPFarmStrat
     }
 }

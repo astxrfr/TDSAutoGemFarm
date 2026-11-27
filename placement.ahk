@@ -3,25 +3,7 @@
 
 class Placement {
     static CURRENT := 1
-    static ORDER := [
-            Config.Slots.ONE(847, 475, 2),
-            Config.Slots.TWO(738, 669, 2),
-            Config.Slots.TWO(851, 693, 2),
-            Config.Slots.TWO(993, 721, 2),
-            Config.Slots.TWO(1162, 746, 2),
-            Config.Slots.TWO(778, 566, 2),
-            Config.Slots.ONE(1165, 576, 2),
-            Config.Slots.TWO(866, 572, 2),
-            Config.Slots.TWO(961, 577, 2),
-            Config.Slots.TWO(918, 542, 2),
-            Config.Slots.TWO(1345, 783, 2),
-            Config.Slots.TWO(790, 793, 2),
-            Config.Slots.TWO(618, 1013, 2),
-            Config.Slots.TWO(677, 581, 2),
-            Config.Slots.TWO(1405, 1051, 2),
-            Config.Slots.TWO(1268, 602, 2),
-            Config.Slots.TWO(586, 709, 2)
-        ]
+    static ORDER := Config.STRAT
 
     class Manager {
         static activeProcedure := 0
